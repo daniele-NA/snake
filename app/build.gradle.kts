@@ -3,7 +3,9 @@
     "KaptUsageInsteadOfKsp",
     "UnstableApiUsage",
     "NewerVersionAvailable",
-    "DataBindingWithoutKapt"
+    "DataBindingWithoutKapt",
+    "GradleDependency",
+    "ChromeOsAbiSupport"
 )
 plugins {
     id("com.android.application")
