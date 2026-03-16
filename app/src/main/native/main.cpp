@@ -2,35 +2,22 @@
 #include <game-activity/GameActivity.h>
 #include <android/log.h>
 #include "utils/utils.h"
+#include "app/app.h"
 
-
-void handle_cmd(struct android_app *pt_app, int32_t cmd) {
-    switch (cmd) {
-        case APP_CMD_INIT_WINDOW:
-            LOG_E("Window initialized");
-            break;
-        case APP_CMD_TERM_WINDOW:
-            break;
-        default:
-            break;
-    }
-}
-
-bool motion_event_filter_func(const GameActivityMotionEvent *pt_event) {
+static bool motion_event_filter_func(const GameActivityMotionEvent *pt_event) {
     int source_class = pt_event->source & AINPUT_SOURCE_CLASS_MASK;
     return (source_class == AINPUT_SOURCE_CLASS_POINTER ||
             source_class == AINPUT_SOURCE_CLASS_JOYSTICK);
 }
 
-// == ENTRYPOINT == //
-void android_main(struct android_app *pt_app) {
-    pt_app->onAppCmd = handle_cmd;
+extern "C" void android_main(struct android_app *pt_app) {
+    pt_app->onAppCmd = app_callback;
     android_app_set_motion_event_filter(pt_app, motion_event_filter_func);
 
     while (!pt_app->destroyRequested) {
         int events;
         struct android_poll_source *pt_source;
-        int result = ALooper_pollOnce(0, NULL, &events, (void **)&pt_source);
+        int result = ALooper_pollOnce(0, NULL, &events, (void **) &pt_source);
 
         switch (result) {
             case ALOOPER_POLL_TIMEOUT:
@@ -44,5 +31,7 @@ void android_main(struct android_app *pt_app) {
                     pt_source->process(pt_app, pt_source);
                 }
         }
+
+        renderer_draw();
     }
 }

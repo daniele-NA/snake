@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.22.1)
 project("cherry")
 
-add_library(cherry SHARED main.cpp)
+add_library(cherry SHARED
+    main.cpp
+    renderer/renderer.c
+    renderer/draw.c)
 
 find_package(game-activity REQUIRED CONFIG)
 

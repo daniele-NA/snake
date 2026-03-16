@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- version 3.2 ,used to filter devices into PlayStore -->
-    <uses-feature android:glEsVersion="0x00030002"/>
+    <!-- OpenGL ES 3.0, used to filter devices on PlayStore -->
+    <uses-feature android:glEsVersion="0x00030000"/>
 
     <application
         android:icon="@mipmap/mpm_ic"
