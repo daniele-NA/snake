@@ -10,6 +10,24 @@ static bool motion_event_filter_func(const GameActivityMotionEvent *pt_event) {
             source_class == AINPUT_SOURCE_CLASS_JOYSTICK);
 }
 
+
+/*
+     OPEN-GL CANVAS
+
+         +1.0
+           |
+           |
+           |
+  -1.0 ----+---- +1.0
+           |
+           |
+           |
+          -1.0
+
+Sì. I triangoli sono la base di tutto in OpenGL —
+   qualsiasi forma (quadrati, cerchi, modelli 3D) è fatta di triangoli. Il GPU è ottimizzato per riempirli.
+
+ */
 extern "C" void android_main(struct android_app *pt_app) {
     pt_app->onAppCmd = app_callback;
     android_app_set_motion_event_filter(pt_app, motion_event_filter_func);

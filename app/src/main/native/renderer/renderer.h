@@ -12,6 +12,12 @@ struct s_renderer {
     EGLSurface pt_surface;
     EGLContext pt_context;
     bool is_ready;
+
+    // We add all the OpenGl params to draw
+    GLuint program;
+    GLuint vao;       // descrive il formato dei dati
+    GLuint vbo;     // carica i vertici sul GPU
+    GLuint ebo;     // non duplica i vertici nel disegno dei triangoli
 };
 
 typedef struct s_renderer s_renderer;

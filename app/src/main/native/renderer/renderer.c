@@ -56,6 +56,11 @@ void renderer_init(ANativeWindow *pt_window) {
     // colore di sfondo (blu)
     glClearColor(0.1f, 0.1f, 1.0f, 1.0f);
 
+    // setup shader, VAO, VBO (una volta sola)
+    draw_setup(&g_renderer);
+
+
+    // dopo aver fatto tutto , mettiamo a ready
     g_renderer.is_ready = true;
     LOG_I("OpenGL ES %s", glGetString(GL_VENDOR));
 }
@@ -85,8 +90,33 @@ void renderer_draw(void) {
     // pulisce lo schermo col colore di sfondo
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // == DISEGNA QUI == //
-    draw_multiple_points();
+    float vertices[] = {
+
+        // lato destro
+        0.4f, 0.42f,
+        0.4f, 0.47f,
+        0.4f, 0.52f,
+        0.4f, 0.57f,
+        0.4f, 0.62f,
+        0.4f, 0.67f,
+        0.4f, 0.72f,
+
+        // lato on-top
+        0.35f, 0.72f,
+        0.30f, 0.72f,
+        0.25f, 0.72f,
+        0.20f, 0.72f,
+        0.15f, 0.72f,
+        0.10f, 0.72f,
+        0.05f, 0.72f
+
+    };
+
+    // dividiamo per 2 , perchè ogni 2 elementi in vertices[] è un punto, dobbiamo passare
+    // la lunghezza pk nei metodi se passi array , lui casta a pointer al primo elemento e perde la lunghezza
+    //draw_multiple_points(&g_renderer,vertices, (sizeof (vertices) / sizeof (vertices[0]) /2));
+
+    draw_center_point(&g_renderer);
 
     // scambia il buffer nascosto con quello visibile
     eglSwapBuffers(g_renderer.pt_display, g_renderer.pt_surface);
