@@ -1,5 +1,5 @@
 /*
- * draw.c - OpenGL ES 3.0 drawing primitives
+ * example_draw.c - OpenGL ES 3.0 drawing primitives (examples)
  *
  * == NDC (Normalized Device Coordinates) ==
  *
@@ -84,60 +84,7 @@
  *     v3 -------- v2
  */
 
-#include "draw.h"
-
-void draw_setup(s_renderer *renderer) {
-    // vertex shader: reads position from VBO (version must match AndroidManifest)
-    const char *vertex_src =
-            "#version 300 es\n"
-            "layout(location = 0) in vec2 pos;\n"
-            "void main(){\n"
-            "  gl_Position = vec4(pos, 0.0, 1.0);\n"
-            "  gl_PointSize = 20.0;\n"
-            "}";
-
-    // fragment shader: Kotlin purple (177, 37, 234)
-    const char *fragment_src =
-            "#version 300 es\n"
-            "precision mediump float;\n"
-            "out vec4 frag_color;\n"
-            "void main(){\n"
-            "  frag_color = vec4(0.694, 0.145, 0.918, 1.0);\n"
-            "}";
-
-    // compile vertex shader
-    GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader_id, 1, &vertex_src, NULL);
-    glCompileShader(vertex_shader_id);
-
-    // compile fragment shader
-    GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader_id, 1, &fragment_src, NULL);
-    glCompileShader(fragment_shader_id);
-
-    // link into a program
-    renderer->program = glCreateProgram();
-    glAttachShader(renderer->program, vertex_shader_id);
-    glAttachShader(renderer->program, fragment_shader_id);
-    glLinkProgram(renderer->program);
-    glDeleteShader(vertex_shader_id);
-    glDeleteShader(fragment_shader_id);
-
-    // create VAO and VBO
-    glGenVertexArrays(1, &renderer->vao);
-    glBindVertexArray(renderer->vao);
-
-    glGenBuffers(1, &renderer->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
-
-    // EBO for indexed triangle drawing
-    glGenBuffers(1, &renderer->ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer->ebo);
-
-    // 2 floats per vertex at location 0
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(0);
-}
+#include "example_draw.h"
 
 void draw_center_point(s_renderer *renderer) {
     float vertex[] = {0.0f, 0.0f};

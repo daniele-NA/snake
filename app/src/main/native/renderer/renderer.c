@@ -1,7 +1,51 @@
 #include <assert.h>
 #include "renderer.h"
-#include "draw.h"
 #include "../utils/utils.h"
+
+static void renderer_setup_gl(s_renderer *renderer) {
+    const char *vertex_src =
+            "#version 300 es\n"
+            "layout(location = 0) in vec2 pos;\n"
+            "void main(){\n"
+            "  gl_Position = vec4(pos, 0.0, 1.0);\n"
+            "  gl_PointSize = 20.0;\n"
+            "}";
+
+    const char *fragment_src =
+            "#version 300 es\n"
+            "precision mediump float;\n"
+            "out vec4 frag_color;\n"
+            "void main(){\n"
+            "  frag_color = vec4(0.694, 0.145, 0.918, 1.0);\n"
+            "}";
+
+    GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader_id, 1, &vertex_src, NULL);
+    glCompileShader(vertex_shader_id);
+
+    GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader_id, 1, &fragment_src, NULL);
+    glCompileShader(fragment_shader_id);
+
+    renderer->program = glCreateProgram();
+    glAttachShader(renderer->program, vertex_shader_id);
+    glAttachShader(renderer->program, fragment_shader_id);
+    glLinkProgram(renderer->program);
+    glDeleteShader(vertex_shader_id);
+    glDeleteShader(fragment_shader_id);
+
+    glGenVertexArrays(1, &renderer->vao);
+    glBindVertexArray(renderer->vao);
+
+    glGenBuffers(1, &renderer->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
+
+    glGenBuffers(1, &renderer->ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer->ebo);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+}
 
 static s_renderer g_renderer = {
     .pt_display = EGL_NO_DISPLAY,
@@ -58,7 +102,7 @@ void renderer_init(ANativeWindow *pt_window) {
     glClearColor(colors[0], colors[1], colors[2], colors[3]);
 
     // setup shaders, VAO, VBO (once)
-    draw_setup(&g_renderer);
+    renderer_setup_gl(&g_renderer);
 
     g_renderer.is_ready = true;
     LOG_I("OpenGL ES %s", glGetString(GL_VENDOR));
@@ -89,7 +133,7 @@ void renderer_draw(void) {
     // clear screen with background color
     glClear(GL_COLOR_BUFFER_BIT);
 
-    draw_kotlin_logo(&g_renderer, 0.0f, 0.0f, 1.0f, 0.5f);
+    // draw_kotlin_logo(&g_renderer, 0.0f, 0.0f, 1.0f, 0.5f);
 
     // swap back buffer to screen
     eglSwapBuffers(g_renderer.pt_display, g_renderer.pt_surface);

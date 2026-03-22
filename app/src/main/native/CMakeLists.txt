@@ -4,7 +4,7 @@ project("snake")
 add_library(snake SHARED
     main.cpp
     renderer/renderer.c
-    renderer/draw.c)
+    example/example_draw.c)
 
 find_package(game-activity REQUIRED CONFIG)
 
