@@ -13,14 +13,11 @@ struct s_renderer {
     EGLContext pt_context;
     bool is_ready;
 
-    // We add all the OpenGl params to draw
     GLuint program;
-    GLuint vao;       // descrive il formato dei dati
-    GLuint vbo;     // carica i vertici sul GPU
-    GLuint ebo;     // non duplica i vertici nel disegno dei triangoli
+    GLuint vao;   // describes vertex data format
+    GLuint vbo;   // uploads vertices to GPU
+    GLuint ebo;   // avoids duplicating vertices for indexed drawing
 };
-
-typedef struct s_renderer s_renderer;
 
 #ifdef __cplusplus
 extern "C" {
