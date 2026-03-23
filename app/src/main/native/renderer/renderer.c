@@ -15,8 +15,9 @@ static void renderer_setup_gl(s_renderer *renderer) {
             "#version 300 es\n"
             "precision mediump float;\n"
             "out vec4 frag_color;\n"
+            "uniform vec4 u_color;\n"
             "void main(){\n"
-            "  frag_color = vec4(0.694, 0.145, 0.918, 1.0);\n"
+            "  frag_color = u_color;\n"
             "}";
 
     GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
@@ -31,6 +32,10 @@ static void renderer_setup_gl(s_renderer *renderer) {
     glAttachShader(renderer->program, vertex_shader_id);
     glAttachShader(renderer->program, fragment_shader_id);
     glLinkProgram(renderer->program);
+
+    // link this pointer with shader
+    (*renderer).color_loc = glGetUniformLocation(renderer->program, "u_color");
+
     glDeleteShader(vertex_shader_id);
     glDeleteShader(fragment_shader_id);
 
@@ -48,10 +53,10 @@ static void renderer_setup_gl(s_renderer *renderer) {
 }
 
 static s_renderer g_renderer = {
-    .pt_display = EGL_NO_DISPLAY,
-    .pt_surface = EGL_NO_SURFACE,
-    .pt_context = EGL_NO_CONTEXT,
-    .is_ready = false,
+        .pt_display = EGL_NO_DISPLAY,
+        .pt_surface = EGL_NO_SURFACE,
+        .pt_context = EGL_NO_CONTEXT,
+        .is_ready = false,
 };
 
 void renderer_init(ANativeWindow *pt_window) {
@@ -61,13 +66,13 @@ void renderer_init(ANativeWindow *pt_window) {
 
     // surface config: RGBA 8-bit, OpenGL ES 3
     const EGLint config_attribs[] = {
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
-        EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
-        EGL_RED_SIZE,        8,
-        EGL_GREEN_SIZE,      8,
-        EGL_BLUE_SIZE,       8,
-        EGL_ALPHA_SIZE,      8,
-        EGL_NONE,
+            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+            EGL_RED_SIZE, 8,
+            EGL_GREEN_SIZE, 8,
+            EGL_BLUE_SIZE, 8,
+            EGL_ALPHA_SIZE, 8,
+            EGL_NONE,
     };
 
     EGLConfig config;
@@ -76,13 +81,13 @@ void renderer_init(ANativeWindow *pt_window) {
 
     // OpenGL ES 3.0 context
     const EGLint context_attribs[] = {
-        EGL_CONTEXT_MAJOR_VERSION, 3,
-        EGL_CONTEXT_MINOR_VERSION, 0,
-        EGL_NONE,
+            EGL_CONTEXT_MAJOR_VERSION, 3,
+            EGL_CONTEXT_MINOR_VERSION, 0,
+            EGL_NONE,
     };
 
     g_renderer.pt_context = eglCreateContext(
-        g_renderer.pt_display, config, EGL_NO_CONTEXT, context_attribs);
+            g_renderer.pt_display, config, EGL_NO_CONTEXT, context_attribs);
 
     if (g_renderer.pt_context == EGL_NO_CONTEXT) {
         LOG_E("EGL context creation failed");
@@ -91,12 +96,12 @@ void renderer_init(ANativeWindow *pt_window) {
 
     // surface linked to the Android window
     g_renderer.pt_surface = eglCreateWindowSurface(
-        g_renderer.pt_display, config, pt_window, NULL);
+            g_renderer.pt_display, config, pt_window, NULL);
 
     // activate context and surface
     eglMakeCurrent(
-        g_renderer.pt_display, g_renderer.pt_surface,
-        g_renderer.pt_surface, g_renderer.pt_context);
+            g_renderer.pt_display, g_renderer.pt_surface,
+            g_renderer.pt_surface, g_renderer.pt_context);
 
     float *colors = opengl_color(0, 0, 0, 255);
     glClearColor(colors[0], colors[1], colors[2], colors[3]);
@@ -127,14 +132,61 @@ void renderer_destroy(void) {
     g_renderer.is_ready = false;
 }
 
-void renderer_draw(void) {
+// draw a square
+void renderer_draw_cell(s_renderer *r, float x, float y, float size, s_rgb rgb) {
+    float half = size / 2.0f;
+    float vertices[] = {
+            x - half, y + half,   // top-left
+            x + half, y + half,   // top-right
+            x + half, y - half,   // bottom-right
+            x - half, y - half,   // bottom-left
+    };
+
+    // see example_draw.c
+    GLuint indices[] = {0, 1, 3, 1, 2, 3};
+
+    glBindBuffer(GL_ARRAY_BUFFER, r->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, r->ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glUseProgram(r->program);
+    glUniform4f(r->color_loc, rgb.r, rgb.g, rgb.b, 1.0f);
+    glBindVertexArray(r->vao);
+    glDrawElements(GL_TRIANGLES, (sizeof(indices) / sizeof(indices[0])), GL_UNSIGNED_INT, 0);
+}
+
+void renderer_draw_game(s_game *game) {
     if (!g_renderer.is_ready) return;
 
-    // clear screen with background color
+
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // draw_kotlin_logo(&g_renderer, 0.0f, 0.0f, 1.0f, 0.5f);
+    float cell_size = 1.8f / GRID_SIZE;
+    float draw_size = cell_size * 0.85f;
+    float head_size = cell_size * 0.9f;
 
-    // swap back buffer to screen
+    // cherry position
+    float cx = -0.9f + (game->cherry.x + 0.5f) * cell_size;
+    float cy = 0.9f - (game->cherry.y + 0.5f) * cell_size;
+
+    renderer_draw_cell(&g_renderer, cx, cy, draw_size, COLOR_CHERRY);
+
+    // snake body (skip head)
+    for (int i = 1; i < game->length; i++) {
+        float bx = -0.9f + (game->body[i].x + 0.5f) * cell_size;
+        float by = 0.9f - (game->body[i].y + 0.5f) * cell_size;
+        renderer_draw_cell(&g_renderer, bx, by, draw_size, COLOR_SNAKE_BODY);
+    }
+
+    // snake head
+
+    float hx = -0.9f + (game->body[0].x + 0.5f) * cell_size;
+    float hy = 0.9f - (game->body[0].y + 0.5f) * cell_size;
+    renderer_draw_cell(&g_renderer, hx, hy, head_size, COLOR_SNAKE_HEAD);
+
+
+
     eglSwapBuffers(g_renderer.pt_display, g_renderer.pt_surface);
+
 }

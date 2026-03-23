@@ -1,8 +1,11 @@
 #include <game-activity/native_app_glue/android_native_app_glue.h>
 #include <game-activity/GameActivity.h>
 #include <android/log.h>
+#include <math.h>
+#include <time.h>
 #include "utils/utils.h"
 #include "app/app.h"
+#include "app/game/snake.h"
 
 static bool motion_event_filter_func(const GameActivityMotionEvent *pt_event) {
     int source_class = pt_event->source & AINPUT_SOURCE_CLASS_MASK;
@@ -27,6 +30,14 @@ static bool motion_event_filter_func(const GameActivityMotionEvent *pt_event) {
  *
  * Shaders are compiled at runtime and sent to the GPU.
  */
+
+
+// global variables
+
+static s_game game;
+static bool game_started = false;
+static float touch_down_x = 0 , touch_down_y = 0 ;
+
 extern "C" void android_main(struct android_app *pt_app) {
     pt_app->onAppCmd = app_callback;
     android_app_set_motion_event_filter(pt_app, motion_event_filter_func);
@@ -55,18 +66,38 @@ extern "C" void android_main(struct android_app *pt_app) {
                 GameActivityMotionEvent *event = &input->motionEvents[i];
                 float x = GameActivityPointerAxes_getX(&event->pointers[0]);
                 float y = GameActivityPointerAxes_getY(&event->pointers[0]);
-                LOG_I("Touch: %.0f, %.0f", x, y);
+                int action = event->action & AMOTION_EVENT_ACTION_MASK;
+
+                // IT'S NOT SWIPE DOWN , IT'S WHEN OUR FINGER TAP THE SCREEN
+                if (action == AMOTION_EVENT_ACTION_DOWN) {
+                    touch_down_x = x;
+                    touch_down_y = y;
+                } else if (action == AMOTION_EVENT_ACTION_UP) {
+                    if (game.state == GAME_OVER) {
+                        game_restart(&game);
+                    } else {
+                        float dx = x - touch_down_x;
+                        float dy = y - touch_down_y;
+                        if (fabsf(dx) > fabsf(dy) && fabsf(dx) > 50) {
+                            game_set_direction(&game, dx > 0 ? RIGHT : LEFT);
+                        } else if (fabsf(dy) > fabsf(dx) && fabsf(dy) > 50) {
+                            game_set_direction(&game, dy > 0 ? DOWN : UP);
+                        }
+                    }
+                }
             }
             android_app_clear_motion_events(input);
-
-            for (int i = 0; i < input->keyEventsCount; i++) {
-                GameActivityKeyEvent *event = &input->keyEvents[i];
-                LOG_I("Key: %d", event->keyCode);
-            }
             android_app_clear_key_events(input);
         }
 
+        if (!game_started) {
+            game_init(&game);
 
-        renderer_draw();
+            // our local state of the game
+            game_started = true;
+        }
+        game_update(&game, get_time_seconds());
+
+        renderer_draw_game(&game);
     }
 }

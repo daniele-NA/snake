@@ -20,16 +20,12 @@ static inline void app_callback(struct android_app *pt_app, int32_t cmd) {
         case APP_CMD_CONFIG_CHANGED:
             LOG_I("Config changed");
             break;
-
-        // these two events are also detected into main.cpp loop //
         case APP_CMD_KEY_EVENT:
             LOG_I("key event");
             break;
         case APP_CMD_TOUCH_EVENT:
             LOG_I("touched");
             break;
-
-
         case APP_CMD_RESUME:
             LOG_I("App resumed");
             char ln[3] = {0};
